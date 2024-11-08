@@ -20,10 +20,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
-Route::middleware('auth:sanctum')->post('/user/update/{id}', [AuthController::class, 'update']);
-Route::middleware('auth:sanctum')->post('/user/delete/{id}', [AuthController::class, 'delete']);
-Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'getUser']);
-Route::middleware('auth:sanctum')->post('/refresh', [AuthController::class, 'refresh']);
+Route::post('/refresh', [AuthController::class, 'refresh']);
+Route::middleware('auth:sanctum')->group(function (){
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/user/update/{id}', [AuthController::class, 'update']);
+    Route::post('/user/delete/{id}', [AuthController::class, 'delete']);
+    Route::get('/user', [AuthController::class, 'getUser']);
+});
 
 

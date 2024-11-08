@@ -13,7 +13,6 @@ class AuthController extends Controller{
     // ฟังก์ชันสำหรับการลงทะเบียนผู้ใช้ใหม่
     public function register(Request $request)
     {
-        // Validating the input
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -37,6 +36,7 @@ class AuthController extends Controller{
             return response()->json([
                 'user' => $user,
             ]);
+            
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while registering the user.',
@@ -48,7 +48,7 @@ class AuthController extends Controller{
     // ฟังก์ชันสำหรับการเข้าสู่ระบบ
     public function login(Request $request)
     {
-        // Validate the login credentials
+
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|min:6',
@@ -57,8 +57,7 @@ class AuthController extends Controller{
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
-
-        // Check if user exists 
+        
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -115,10 +114,7 @@ class AuthController extends Controller{
             return response()->json(['message' => 'Invalid or expired refresh token'], 401);
         }
         
-        // ลบ access token เก่าทุกตัว (ทำให้ไม่สามารถใช้ได้)
-        $user->tokens->each(function ($token) {
-            $token->delete(); // ลบ access token เก่าที่ไม่ใช้งาน
-        });
+        $user->tokens()->delete();// ลบ access token เก่าที่ไม่ใช้งาน
 
         // สร้าง access token ใหม่
         $newAccessToken = $user->createToken('access_token')->plainTextToken;
@@ -133,7 +129,7 @@ class AuthController extends Controller{
         return response()->json([
             'access_token' => $newAccessToken,
             'token_type' => 'Bearer',
-            'expires_in' => 60, // 1 นาที 
+            'expires_in' => 60, // 1 นาที (60 วินาที)
         ]);
     }
 
@@ -163,7 +159,7 @@ class AuthController extends Controller{
         $request->validate([
             'name' => 'nullable|string|max:255',
             'email' => 'email|unique:users,email,' . $id,
-            'password' => 'nullable|min:6|confirmed'
+            'password' => 'nullable|min:6|'
         ]);
 
         // อัปเดตข้อมูลของผู้ใช้
@@ -208,7 +204,7 @@ class AuthController extends Controller{
 
         // ถ้าไม่มีการล็อกอิน หรือ access token หมดอายุ
         if (!$user || $user->access_token_expiry < now()) {
-            return response()->json(['message' => 'Access token expired or not authenticated'], 401);
+            return response()->json(['message' => 'Access token expired. Please refresh your token.'], 401);
         }
 
         // ส่งกลับข้อมูลผู้ใช้
