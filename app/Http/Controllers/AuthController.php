@@ -58,17 +58,19 @@ class AuthController extends Controller{
             return response()->json($validator->errors(), 400);
         }
 
-        // Check if user exists
+        // Check if user exists 
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        // สร้าง access token ด้วยเวลา expiration 1 นาที (60 วินาที)
+        $user->tokens()->delete();
+
+        // สร้าง access token ด้วยเวลา expiration
         $accessToken = $user->createToken('access_token')->plainTextToken;
 
-        // เก็บเวลา expiration ของ access token (1 นาที)
+        // เก็บเวลา expiration ของ access token
         $accessTokenExpiry = now()->addMinutes(1); // 1 นาทีจากนี้
 
         // เก็บเวลา expiry ของ access token ในฐานข้อมูล
@@ -99,7 +101,6 @@ class AuthController extends Controller{
             ],
         ]);
     }
-
 
     public function refresh(Request $request)
     {
@@ -132,7 +133,7 @@ class AuthController extends Controller{
         return response()->json([
             'access_token' => $newAccessToken,
             'token_type' => 'Bearer',
-            'expires_in' => 60, // 1 นาที (60 วินาที)
+            'expires_in' => 60, // 1 นาที 
         ]);
     }
 
@@ -215,9 +216,5 @@ class AuthController extends Controller{
             'user' => $user
         ]);
     }
-
-
-
-    
 }
 
